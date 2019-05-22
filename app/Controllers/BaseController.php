@@ -21,12 +21,26 @@ class BaseController
     protected $user;
 
     /**
+     * @var \Slim\Views\PhpRenderer
+     */
+    protected $renderer;
+
+    /**
      * Construct page renderer
      */
-    public function __construct()
+    public function __construct(\Slim\Container $container)
     {
         $this->view = View::getSmarty();
         $this->user = Auth::getUser();
+
+        $this->renderer = $container->get('renderer');
+        if ($this->user->isLogin) {
+            define('TEMPLATE_PATH', BASE_PATH . '/resources/views/' . $this->user->theme . '/');
+        } else {
+            define('TEMPLATE_PATH', BASE_PATH . '/resources/views/' . $_ENV['theme'] . '/');
+        }
+        $this->renderer->setTemplatePath(TEMPLATE_PATH);
+        $this->renderer->addAttribute('user', $this->user);
     }
 
     /**
