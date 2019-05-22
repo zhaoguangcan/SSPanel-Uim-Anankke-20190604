@@ -3,37 +3,27 @@
 namespace App\Controllers;
 
 use App\Models\InviteCode;
-use App\Models\User;
-use App\Models\Code;
-use App\Models\Payback;
-use App\Models\Paylist;
-use App\Services\Auth;
-use App\Services\Config;
-use App\Services\Payment;
 use App\Utils\AliPay;
-use App\Utils\Tools;
-use App\Utils\Telegram;
-use App\Utils\Tuling;
 use App\Utils\TelegramSessionManager;
-use App\Utils\QRcode;
-use App\Utils\Pay;
 use App\Utils\TelegramProcess;
-use App\Utils\Spay_tool;
 use App\Utils\Geetest;
+
+use Slim\Http\Request;
+use Slim\Http\Response;
 
 /**
  *  HomeController
  */
 class HomeController extends BaseController
 {
-    public function index()
+    public function index(Request $request, Response $response, array $args): Response
     {
         $GtSdk = null;
         $recaptcha_sitekey = null;
-        if (Config::get('captcha_provider') != '') {
-            switch (Config::get('captcha_provider')) {
+        if ($_ENV['captcha_provider'] != '') {
+            switch ($_ENV['captcha_provider']) {
                 case 'recaptcha':
-                    $recaptcha_sitekey = Config::get('recaptcha_sitekey');
+                    $recaptcha_sitekey = $_ENV['recaptcha_sitekey'];
                     break;
                 case 'geetest':
                     $uid = time() . rand(1, 10000);
@@ -42,7 +32,7 @@ class HomeController extends BaseController
             }
         }
 
-        if (Config::get('enable_telegram') == 'true') {
+        if ($_ENV['enable_telegram'] == 'true') {
             $login_text = TelegramSessionManager::add_login_session();
             $login = explode("|", $login_text);
             $login_token = $login[0];
@@ -52,16 +42,17 @@ class HomeController extends BaseController
             $login_number = '';
         }
 
-        return $this->view()
-            ->assign('geetest_html', $GtSdk)
-            ->assign('login_token', $login_token)
-            ->assign('login_number', $login_number)
-            ->assign('telegram_bot', Config::get('telegram_bot'))
-            ->assign('enable_logincaptcha', Config::get('enable_login_captcha'))
-            ->assign('enable_regcaptcha', Config::get('enable_reg_captcha'))
-            ->assign('base_url', Config::get('baseUrl'))
-            ->assign('recaptcha_sitekey', $recaptcha_sitekey)
-            ->display('index.tpl');
+        $this->renderer->render($response, 'index.phtml', [
+            'geetest_html' => $GtSdk,
+            'login_token' => $login_token,
+            'login_number' => $login_number,
+            'telegram_bot' => $_ENV['telegram_bot'],
+            'enable_logincaptcha' => $_ENV['enable_login_captcha'],
+            'enable_regcaptcha' => $_ENV['enable_reg_captcha'],
+            'base_url' => $_ENV['baseUrl'],
+            'recaptcha_sitekey' => $recaptcha_sitekey,
+        ]);
+        return $response;
     }
 
     public function indexold()
@@ -73,10 +64,6 @@ class HomeController extends BaseController
     {
         $codes = InviteCode::where('user_id', '=', '0')->take(10)->get();
         return $this->view()->assign('codes', $codes)->display('code.tpl');
-    }
-
-    public function down()
-    {
     }
 
     public function tos()
@@ -96,7 +83,7 @@ class HomeController extends BaseController
             $token = $request->getQueryParams()["token"];
         }
 
-        if ($token == Config::get('telegram_request_token')) {
+        if ($token == $_ENV['telegram_request_token']) {
             TelegramProcess::process();
         } else {
             echo("不正确请求！");
@@ -121,7 +108,7 @@ class HomeController extends BaseController
     public function getOrderList($request, $response, $args)
     {
         $key = $request->getParam('key');
-        if (!$key || $key != Config::get('key')) {
+        if (!$key || $key != $_ENV['key']) {
             $res['ret'] = 0;
             $res['msg'] = "错误";
             return $response->getBody()->write(json_encode($res));
@@ -134,7 +121,7 @@ class HomeController extends BaseController
         $key = $request->getParam('key');
         $sn = $request->getParam('sn');
         $url = $request->getParam('url');
-        if (!$key || $key != Config::get('key')) {
+        if (!$key || $key != $_ENV['key']) {
             $res['ret'] = 0;
             $res['msg'] = "错误";
             return $response->getBody()->write(json_encode($res));
