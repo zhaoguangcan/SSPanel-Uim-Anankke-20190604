@@ -42,7 +42,7 @@ class HomeController extends BaseController
             $login_number = '';
         }
 
-        $this->renderer->render($response, 'index.phtml', [
+        return $this->renderer->render($response, 'index.phtml', [
             'geetest_html' => $GtSdk,
             'login_token' => $login_token,
             'login_number' => $login_number,
@@ -52,28 +52,27 @@ class HomeController extends BaseController
             'base_url' => $_ENV['baseUrl'],
             'recaptcha_sitekey' => $recaptcha_sitekey,
         ]);
-        return $response;
     }
 
-    public function indexold()
+    public function indexold(Request $request, Response $response, array $args): Response
     {
-        return $this->view()->display('indexold.tpl');
+        return $this->renderer->render($response, 'indexold.phtml');
     }
 
-    public function code()
+    public function code(Request $request, Response $response, array $args): Response
     {
         $codes = InviteCode::where('user_id', '=', '0')->take(10)->get();
         return $this->view()->assign('codes', $codes)->display('code.tpl');
     }
 
-    public function tos()
+    public function tos(Request $request, Response $response, array $args): Response
     {
-        return $this->view()->display('tos.tpl');
+        return $this->renderer->render($response, 'tos.phtml');
     }
 
-    public function staff()
+    public function staff(Request $request, Response $response, array $args): Response
     {
-        return $this->view()->display('staff.tpl');
+        return $this->renderer->render($response, 'staff.phtml');
     }
 
     public function telegram($request, $response, $args)
@@ -90,33 +89,35 @@ class HomeController extends BaseController
         }
     }
 
-    public function page404($request, $response, $args)
+    public function page404(Request $request, Response $response, array $args): Response
     {
-        return $this->view()->display('404.tpl');
+        return $this->renderer->render($response, '404.phtml');
     }
 
-    public function page405($request, $response, $args)
+    public function page405(Request $request, Response $response, array $args): Response
     {
-        return $this->view()->display('405.tpl');
+        return $this->renderer->render($response, '405.phtml');
     }
 
-    public function page500($request, $response, $args)
+    public function page500(Request $request, Response $response, array $args): Response
     {
-        return $this->view()->display('500.tpl');
+        return $this->renderer->render($response, '500.phtml');
     }
 
-    public function getOrderList($request, $response, $args)
+    public function getOrderList(Request $request, Response $response, array $args): Response
     {
         $key = $request->getParam('key');
         if (!$key || $key != $_ENV['key']) {
             $res['ret'] = 0;
             $res['msg'] = "错误";
-            return $response->getBody()->write(json_encode($res));
+            $response->getBody()->write(json_encode($res));
+            return $response;
         }
-        return $response->getBody()->write(json_encode(['data' => AliPay::getList()]));
+        $response->getBody()->write(json_encode(['data' => AliPay::getList()]));
+        return $response;
     }
 
-    public function setOrder($request, $response, $args)
+    public function setOrder(Request $request, Response $response, array $args): Response
     {
         $key = $request->getParam('key');
         $sn = $request->getParam('sn');
@@ -124,8 +125,10 @@ class HomeController extends BaseController
         if (!$key || $key != $_ENV['key']) {
             $res['ret'] = 0;
             $res['msg'] = "错误";
-            return $response->getBody()->write(json_encode($res));
+            $response->getBody()->write(json_encode($res));
+            return $response;
         }
-        return $response->getBody()->write(json_encode(['res' => AliPay::setOrder($sn, $url)]));
+        $response->getBody()->write(json_encode(['res' => AliPay::setOrder($sn, $url)]));
+        return $response;
     }
 }
